@@ -74,6 +74,12 @@ def specForImage(image, version){
             shell: '/bin/bash'
       ],
     ],
+    "podman": [
+      "latest": [
+        image: "kbaig/jenkins-slave-podman-centos7:latest",
+        shell: '/bin/bash'
+      ],
+    ],
     "java": [
       "latest": [
             image: "openshift/jenkins-slave-maven-centos7:v3.11",

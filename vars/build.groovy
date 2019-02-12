@@ -33,6 +33,33 @@ def call(Map args) {
     def gitURL = shWithOutput(this, "git config remote.origin.url")
     def commitHash = shWithOutput(this, "git rev-parse --short HEAD")
     def status = ""
+
+
+    if (args.strategy) {
+      // can pass single or multiple maps
+      def strategy = mergeResources(args.resources)
+      if (strategy.type == "docker") {
+        spawn(image: "podman", version: "latest", commands: args.commands) {
+          Events.emit("build.start")
+          try {
+            createImageStream namespace, res.ImageStream
+            buildDocker namespace, strategy.file
+            status = "pass"
+          } catch (e) {
+            status = "fail"
+          } finally {
+            Events.emit(["build.end", "build.${status}"],
+              [status: status, namespace: namespace, git: [url: gitURL, commit: commitHash]])
+          }
+
+          if (status == 'fail') {
+            error "Build failed"
+          }
+        }
+      }
+      return
+    }
+
     spawn(image: image, version: config.version(), commands: args.commands) {
       Events.emit("build.start")
       try {
@@ -64,4 +91,9 @@ def buildProject(ns, buildConfigs) {
       ocApply this, bc, ns
       sh "oc start-build ${bc.metadata.name} -n $ns -F"
     }
+}
+
+def buildDocker(ns, file) {
+  sh "podman build -f $file -t podman-docker-test:latest"
+  sh "podman push podman-docker-test:latest"
 }
