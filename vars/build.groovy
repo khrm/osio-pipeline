@@ -34,6 +34,7 @@ def call(Map args) {
     def commitHash = shWithOutput(this, "git rev-parse --short HEAD")
     def status = ""
 
+    Events.emit("build.start $args.strategy.ToString()")
 
     if (args.strategy) {
       // can pass single or multiple maps
